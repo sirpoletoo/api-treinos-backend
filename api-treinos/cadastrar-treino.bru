@@ -1,0 +1,31 @@
+meta {
+  name: cadastrar-treino
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://localhost:3000/treinos
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "nome": "Treino A - Atualizado",
+    "exercicios": [
+      {
+        "nome": "Remada Curvada", 
+        "repeticoes": 3
+      }, 
+      {
+      "nome": "Puxada Curvada",
+      "repeticoes": 4
+      },
+      {
+        "nome": "Remada Curvada", 
+        "repeticoes": 3
+      } 
+    ]
+  }
+}
