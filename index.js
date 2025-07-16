@@ -19,13 +19,14 @@ app.post('/treinos', (req, res) => {
 
   // NOVO PASSO: Verificar se há exercícios com nomes duplicados dentro do mesmo treino
   const exerciciosSet = new Set();
+  // Percorre cada string de exercício no array 'exercicios'
   for (const exercicio of exercicios) {
-    // Converte para minúsculas para uma comparação case-insensitive
-    const nomeExercicio = exercicio.nome
-    const nomeExercicioLower = nomeExercicio.toLowerCase(); 
+    // CORREÇÃO AQUI: Chama toLowerCase() diretamente na string 'exercicio'
+    // e atribui o resultado a 'nomeExercicioLower'
+    const nomeExercicioLower = exercicio.toLowerCase(); 
     if (exerciciosSet.has(nomeExercicioLower)) {
       // Se um exercício com o mesmo nome (case-insensitive) já foi adicionado ao Set
-      return res.status(400).json({ erro: `Exercício duplicado encontrado no treino: '${nomeExercicio}'.` });
+      return res.status(400).json({ erro: `Exercício duplicado encontrado no treino: '${exercicio}'.` });
     }
     exerciciosSet.add(nomeExercicioLower);
   }
@@ -63,7 +64,10 @@ app.put('/treinos/:id', (req, res) => {
 
   // NOVO PASSO: Verificar se há exercícios com nomes duplicados dentro do treino que está sendo atualizado
   const exerciciosSet = new Set();
+  // Percorre cada string de exercício no array 'exercicios'
   for (const exercicio of exercicios) {
+    // CORREÇÃO AQUI: Chama toLowerCase() diretamente na string 'exercicio'
+    // e atribui o resultado a 'nomeExercicioLower'
     const nomeExercicioLower = exercicio.toLowerCase();
     if (exerciciosSet.has(nomeExercicioLower)) {
       return res.status(400).json({ erro: `Exercício duplicado encontrado no treino: '${exercicio}'.` });
