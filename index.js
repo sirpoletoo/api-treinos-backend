@@ -1,9 +1,16 @@
 const express = require('express');
 const app = express();
+const cors = require('cors');
 app.use(express.json());
+app.use(cors());
 
-let treinos = [];
-let idCounter = 1;
+let treinos = []; // Array para treinos base
+let idCounter = 1; // Contador para treinos base
+
+// NOVAS VARIÁVEIS PARA TREINOS REALIZADOS
+let treinosRealizados = [];
+let idTreinoRealizadoCounter = 1;
+
 
 // Criar treino
 app.post('/treinos', (req, res) => {
@@ -22,7 +29,7 @@ app.post('/treinos', (req, res) => {
   // Percorre cada string de exercício no array 'exercicios'
   for (const exercicio of exercicios) {
     // CORREÇÃO AQUI: Chama toLowerCase() diretamente na string 'exercicio'
-    // e atribui o resultado a 'nomeExercicioLower'
+    // e ATRIBUI o resultado a 'nomeExercicioLower'
     const nomeExercicioLower = exercicio.toLowerCase(); 
     if (exerciciosSet.has(nomeExercicioLower)) {
       // Se um exercício com o mesmo nome (case-insensitive) já foi adicionado ao Set
@@ -67,7 +74,7 @@ app.put('/treinos/:id', (req, res) => {
   // Percorre cada string de exercício no array 'exercicios'
   for (const exercicio of exercicios) {
     // CORREÇÃO AQUI: Chama toLowerCase() diretamente na string 'exercicio'
-    // e atribui o resultado a 'nomeExercicioLower'
+    // e ATRIBUI o resultado a 'nomeExercicioLower'
     const nomeExercicioLower = exercicio.toLowerCase();
     if (exerciciosSet.has(nomeExercicioLower)) {
       return res.status(400).json({ erro: `Exercício duplicado encontrado no treino: '${exercicio}'.` });
@@ -88,5 +95,67 @@ app.delete('/treinos/:id', (req, res) => {
   treinos.splice(index, 1);
   res.status(204).send();
 });
+
+
+// NOVO ENDPOINT: Registrar um Treino Realizado
+app.post('/treinos-realizados', (req, res) => {
+  // 1. Extrair Dados da Requisição
+  const { nomeDoTreino, exerciciosRealizados } = req.body;
+
+  // 2. Validar se 'nomeDoTreino' e 'exerciciosRealizados' foram fornecidos
+  if (!nomeDoTreino || !exerciciosRealizados || !Array.isArray(exerciciosRealizados) || exerciciosRealizados.length === 0) {
+    return res.status(400).json({ erro: 'Nome do treino e lista de exercícios realizados são obrigatórios.' });
+  }
+
+  // 3. Validar Duplicatas no array 'exerciciosRealizados' recebido
+  const exerciciosRealizadosSet = new Set();
+  for (const exercicioRealizado of exerciciosRealizados) {
+    // Verifica se o item é uma string antes de chamar toLowerCase
+    if (typeof exercicioRealizado !== 'string') {
+        return res.status(400).json({ erro: `Exercício inválido na lista de realizados: '${exercicioRealizado}'. Esperado uma string.` });
+    }
+    const nomeExercicioRealizadoLower = exercicioRealizado.toLowerCase();
+    if (exerciciosRealizadosSet.has(nomeExercicioRealizadoLower)) {
+      return res.status(400).json({ erro: `Exercício duplicado encontrado na lista de exercícios realizados: '${exercicioRealizado}'.` });
+    }
+    exerciciosRealizadosSet.add(nomeExercicioRealizadoLower);
+  }
+
+  // 4. Regra de Negócio 1: "O treino realizado cadastrado deve estar cadastrado na lista de treinos."
+  // Procura o treino base pelo nome (comparando de forma case-insensitive)
+  const treinoBaseEncontrado = treinos.find(treino => treino.nome.toLowerCase() === nomeDoTreino.toLowerCase());
+
+  if (!treinoBaseEncontrado) { // Se o treino base NÃO for encontrado
+    return res.status(404).json({ erro: `Treino base '${nomeDoTreino}' não encontrado.` });
+  }
+
+  // 5. Regra de Negócio 2: "O exercício informado deve estar cadastrado no treino específico."
+  // Percorre os exercícios que foram 'realizados' e verifica se cada um existe no treino base
+  for (const exercicioRealizado of exerciciosRealizados) {
+    const nomeExercicioRealizadoLower = exercicioRealizado.toLowerCase();
+    // Procura o exercício na lista de exercícios do treino base (também case-insensitive)
+    const exercicioValidoNoTreinoBase = treinoBaseEncontrado.exercicios.find(
+      exDoTreinoBase => exDoTreinoBase.toLowerCase() === nomeExercicioRealizadoLower
+    );
+
+    if (!exercicioValidoNoTreinoBase) { // Se um exercício realizado NÃO estiver no treino base
+      return res.status(400).json({ erro: `Exercício '${exercicioRealizado}' não pertence ao treino base '${treinoBaseEncontrado.nome}'.` });
+    }
+  }
+
+  // 6. Se todas as validações e regras de negócio passarem, cria o novo registro
+  const novoTreinoRealizado = {
+    id: idTreinoRealizadoCounter++, 
+    nomeDoTreino: nomeDoTreino,
+    exerciciosRealizados: exerciciosRealizados,
+    dataRealizacao: new Date().toISOString() 
+  };
+
+  treinosRealizados.push(novoTreinoRealizado); 
+
+  
+  res.status(201).json(novoTreinoRealizado); 
+});
+
 
 app.listen(3000, () => console.log('API rodando em http://localhost:3000'));
